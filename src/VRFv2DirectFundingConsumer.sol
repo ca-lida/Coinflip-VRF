@@ -21,16 +21,19 @@ contract VRFv2DirectFundingConsumer is
     ConfirmedOwner
 {
     event RequestSent(uint256 requestId, uint32 numWords);
+    // this didnt emit in order, so added an event to emit each random word
     event RequestFulfilled(
         uint256 requestId,
         uint256[] randomWords,
         uint256 payment
     );
 
+    event RandomWordGenerated(uint256 indexed requestId, uint256 indexed index, uint256 randomWord);
+
     struct RequestStatus {
         uint256 paid; // amount paid in link
         bool fulfilled; // whether the request has been successfully fulfilled
-        uint256[] randomWords;
+        uint256[] randomWords; 
     }
     mapping(uint256 => RequestStatus)
         public s_requests; /* requestId --> requestStatus */
@@ -51,7 +54,8 @@ contract VRFv2DirectFundingConsumer is
 
     // For this example, retrieve 2 random values in one request.
     // Cannot exceed VRFV2Wrapper.getConfig().maxNumWords.
-    uint32 numWords = 2;
+    // changing to 1 for the coinflip function
+    uint32 numWords = 1;
 
     // Address LINK - hardcoded for Sepolia
     address linkAddress = 0x779877A7B0D9E8603169DdbD7836e478b4624789;
@@ -64,6 +68,7 @@ contract VRFv2DirectFundingConsumer is
         VRFV2WrapperConsumerBase(linkAddress, wrapperAddress)
     {}
 
+    // its actually requesting a random number, dk why its called random words
     function requestRandomWords()
         external
         onlyOwner
@@ -97,6 +102,10 @@ contract VRFv2DirectFundingConsumer is
             _randomWords,
             s_requests[_requestId].paid
         );
+            // Emit event for each random word - although just 1 word set for now
+        for (uint256 i = 0; i < _randomWords.length; i++) {
+            emit RandomWordGenerated(_requestId, i, _randomWords[i]);
+    }
     }
 
     function getRequestStatus(
